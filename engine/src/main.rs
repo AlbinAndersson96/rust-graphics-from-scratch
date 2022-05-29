@@ -1,3 +1,5 @@
 fn main() {
-    renderer::init();
+    let window_handle = renderer::init().expect("msg");
+    
+    window_handle.join().expect("dfad");
 }

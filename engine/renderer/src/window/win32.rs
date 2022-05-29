@@ -6,39 +6,38 @@ use winapi::um::winuser::{ CreateWindowExW, RegisterClassExW, PostQuitMessage, D
 use winapi::um::winnt::LPCWSTR;
 use winapi::shared::windef::{ HBRUSH, HWND, HMENU };
 use winapi::shared::minwindef::{ UINT, WPARAM, LPARAM, LRESULT, HINSTANCE };
-use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::libloaderapi::GetModuleHandleW;
 
 use std::ffi::OsStr;
 use std::os::windows::prelude::OsStrExt;
 use std::ptr::null_mut;
+use std::error::Error;
 
 static mut IS_WINDOW_CLOSED: bool = false;
 
-pub fn new_window() -> Result<(), String>{
-    let window_thread = std::thread::spawn(move || {
-        let window_class_name = create_window_class().unwrap();
-        let window_hwnd = create_window(window_class_name).unwrap();
+pub fn new_window() -> Result<HWND, Box<dyn Error>>{
+    let window_class_name = create_window_class().unwrap();
+    let window_hwnd = create_window(window_class_name).unwrap();
 
-        unsafe {
-            ShowWindow(window_hwnd, SW_SHOW);
-
-            let mut msg: MSG = std::mem::zeroed();
-
-            while !IS_WINDOW_CLOSED {
-                if PeekMessageA(&mut msg, window_hwnd, 0, 0, PM_REMOVE) > 0 {
-                    TranslateMessage(&msg);
-                    DispatchMessageA(&msg);
-                }
-            }
-        }
-    });
-
-    window_thread.join().expect("");
-    Ok(())
+    Ok(window_hwnd)
 }
 
-fn create_window(window_class_name: Vec<u16>) -> Result<HWND, String>{
+pub fn show_window_start_event_loop(window_hwnd: HWND) {
+    unsafe {
+        ShowWindow(window_hwnd, SW_SHOW);
+
+        let mut msg: MSG = std::mem::zeroed();
+
+        while !IS_WINDOW_CLOSED {
+            if PeekMessageA(&mut msg, window_hwnd, 0, 0, PM_REMOVE) > 0 {
+                TranslateMessage(&msg);
+                DispatchMessageA(&msg);
+            }
+        }
+    }
+}
+
+fn create_window(window_class_name: Vec<u16>) -> Result<HWND, Box<dyn Error>>{
     unsafe {
         let h_wnd_window = CreateWindowExW(
             0,
@@ -55,16 +54,15 @@ fn create_window(window_class_name: Vec<u16>) -> Result<HWND, String>{
             std::ptr::null_mut(),
         );
 
-        let error_code = GetLastError();
-        if error_code != 0 {
-            return Err(format!("Failed to create window, error code: {error_code}"));
+        if h_wnd_window == (0 as HWND)  {
+            Err(format!("Failed to create window"))?;
         }
 
         Ok(h_wnd_window)
     }
 }
 
-fn create_window_class() -> Result<Vec<u16>, String> {    
+fn create_window_class() -> Result<Vec<u16>, Box<dyn Error>> {    
     unsafe {
         let mut window_class_name: Vec<u16> = OsStr::new("WindowClass").encode_wide().collect();
         window_class_name.push(0);
@@ -86,11 +84,10 @@ fn create_window_class() -> Result<Vec<u16>, String> {
             hIconSm: LoadIconW(null_mut(), IDI_APPLICATION),
         };
 
-        RegisterClassExW(&window_class);
+        let error_code = RegisterClassExW(&window_class);
 
-        let error_code = GetLastError();
-        if error_code != 0 {
-            return Err(format!("Failed to create window class, error code: {error_code}"));
+        if error_code == 0 {
+            Err(format!("Failed to create window class, error code: {error_code}"))?;
         }
 
         Ok(window_class_name)
