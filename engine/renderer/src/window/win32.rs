@@ -16,8 +16,9 @@ use std::ptr::null_mut;
 static mut IS_WINDOW_CLOSED: bool = false;
 
 pub fn new_window() -> Result<(), String>{
-        let window_class_name = create_window_class()?;
-        let window_hwnd = create_window(window_class_name)?;
+    let window_thread = std::thread::spawn(move || {
+        let window_class_name = create_window_class().unwrap();
+        let window_hwnd = create_window(window_class_name).unwrap();
 
         unsafe {
             ShowWindow(window_hwnd, SW_SHOW);
@@ -31,6 +32,9 @@ pub fn new_window() -> Result<(), String>{
                 }
             }
         }
+    });
+
+    window_thread.join().expect("");
     Ok(())
 }
 
