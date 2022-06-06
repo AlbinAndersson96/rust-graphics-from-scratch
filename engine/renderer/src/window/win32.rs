@@ -3,21 +3,18 @@
 use winapi::um::winuser::{ CreateWindowExW, RegisterClassExW, PostQuitMessage, DefWindowProcW, ShowWindow, TranslateMessage, DispatchMessageA, PeekMessageA, LoadCursorW, LoadIconW,
     WNDCLASSEXW, MSG, 
     WS_OVERLAPPED, WS_MINIMIZEBOX, WS_SYSMENU, WM_DESTROY, SW_SHOW, PM_REMOVE, CS_OWNDC, CS_HREDRAW, CS_VREDRAW, IDI_APPLICATION, IDC_ARROW, COLOR_WINDOWFRAME };
-use winapi::um::winnt::LPCWSTR;
 use winapi::shared::windef::{ HBRUSH, HWND, HMENU };
 use winapi::shared::minwindef::{ UINT, WPARAM, LPARAM, LRESULT, HINSTANCE };
 use winapi::um::libloaderapi::GetModuleHandleW;
 
-use std::ffi::OsStr;
-use std::os::windows::prelude::OsStrExt;
 use std::ptr::null_mut;
 use std::error::Error;
 
 static mut IS_WINDOW_CLOSED: bool = false;
 
-pub fn new_window() -> Result<HWND, Box<dyn Error>>{
-    let window_class_name = create_window_class().unwrap();
-    let window_hwnd = create_window(window_class_name).unwrap();
+pub fn get_window(window_width :u16, window_height :u16, window_title :&'static str) -> Result<HWND, Box<dyn Error>>{
+    let window_class_name = create_window_class()?;
+    let window_hwnd = create_window(window_class_name, window_width, window_height, window_title)?;
 
     Ok(window_hwnd)
 }
@@ -37,17 +34,17 @@ pub fn show_window_start_event_loop(window_hwnd: HWND) {
     }
 }
 
-fn create_window(window_class_name: Vec<u16>) -> Result<HWND, Box<dyn Error>>{
+fn create_window(window_class_name: Vec<u16>, window_width :u16, window_height :u16, window_title :&'static str) -> Result<HWND, Box<dyn Error>>{
     unsafe {
         let h_wnd_window = CreateWindowExW(
             0,
             window_class_name.as_ptr(),
-            0 as LPCWSTR,
+            window_title.encode_utf16().collect::<Vec<u16>>().as_ptr(),
             WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU,
             0,
             0,
-            400,
-            400,
+            window_width.into(),
+            window_height.into(),
             0 as HWND,
             0 as HMENU,
             0 as HINSTANCE,
@@ -64,7 +61,7 @@ fn create_window(window_class_name: Vec<u16>) -> Result<HWND, Box<dyn Error>>{
 
 fn create_window_class() -> Result<Vec<u16>, Box<dyn Error>> {    
     unsafe {
-        let mut window_class_name: Vec<u16> = OsStr::new("WindowClass").encode_wide().collect();
+        let mut window_class_name: Vec<u16> = "WindowClass".encode_utf16().collect();
         window_class_name.push(0);
 
         let hinstance = GetModuleHandleW(null_mut());
