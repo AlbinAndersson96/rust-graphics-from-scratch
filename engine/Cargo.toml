@@ -6,5 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-renderer = { path = "renderer"}
-input = { path = "input"}
+ash = "0.37.0+1.3.209"
+ash-window = "0.10.0"
+raw-window-handle = "0.4.3"
+
+gilrs = "0.9.0"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.9", features = ["winuser", "winbase", "winnt", "libloaderapi", "errhandlingapi"] }
