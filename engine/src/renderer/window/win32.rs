@@ -10,9 +10,11 @@ use winapi::um::libloaderapi::GetModuleHandleW;
 use std::ptr::null_mut;
 use std::error::Error;
 
+use crate::utils::string::string_to_utf16_u16_vec;
+
 static mut IS_WINDOW_CLOSED: bool = false;
 
-pub fn get_window(window_width :u16, window_height :u16, window_title :&'static str) -> Result<HWND, Box<dyn Error>>{
+pub fn get_window(window_width :u16, window_height :u16, window_title :String) -> Result<HWND, Box<dyn Error>>{
     let window_class_name = create_window_class()?;
     let window_hwnd = create_window(window_class_name, window_width, window_height, window_title)?;
 
@@ -34,12 +36,12 @@ pub fn show_window_start_event_loop(window_hwnd: HWND) {
     }
 }
 
-fn create_window(window_class_name: Vec<u16>, window_width :u16, window_height :u16, window_title :&'static str) -> Result<HWND, Box<dyn Error>>{
+fn create_window(window_class_name: Vec<u16>, window_width :u16, window_height :u16, window_title :String) -> Result<HWND, Box<dyn Error>>{
     unsafe {
         let h_wnd_window = CreateWindowExW(
             0,
             window_class_name.as_ptr(),
-            window_title.encode_utf16().collect::<Vec<u16>>().as_ptr(),
+            string_to_utf16_u16_vec(&window_title).as_ptr(),
             WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU,
             0,
             0,
