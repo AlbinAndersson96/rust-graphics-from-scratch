@@ -10,7 +10,7 @@ use winapi::um::libloaderapi::GetModuleHandleW;
 use std::ptr::null_mut;
 use std::error::Error;
 
-use crate::utils::string::string_to_utf16_u16_vec;
+use crate::utils::utf16::to_utf16_vec;
 
 static mut IS_WINDOW_CLOSED: bool = false;
 
@@ -41,7 +41,7 @@ fn create_window(window_class_name: Vec<u16>, window_width :u16, window_height :
         let h_wnd_window = CreateWindowExW(
             0,
             window_class_name.as_ptr(),
-            string_to_utf16_u16_vec(&window_title).as_ptr(),
+            to_utf16_vec!(&window_title).as_ptr(),
             WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU,
             0,
             0,
